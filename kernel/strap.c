@@ -63,8 +63,10 @@ void handle_user_page_fault(uint64 mcause, uint64 sepc, uint64 stval) {
       // virtual address that causes the page fault.
       //panic( "You need to implement the operations that actually handle the page fault in lab2_3.\n" );
       {
+      //if (page_walk(current->pagetable, stval, 0) == NULL) panic("this address is not available!");
+      if (stval < current->trapframe->regs.sp - PGSIZE) panic("this address is not available!");
       uint64 page = (uint64)alloc_page();
-      map_pages(current->pagetable, stval - stval % PGSIZE, PGSIZE, page, prot_to_type(PROT_WRITE | PROT_READ, 1));
+      user_vm_map(current->pagetable, stval - stval % PGSIZE, PGSIZE, page, prot_to_type(PROT_WRITE | PROT_READ, 1));
       break;
       }
     default:
