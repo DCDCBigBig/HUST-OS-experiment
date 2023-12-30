@@ -100,7 +100,7 @@ ssize_t sys_user_yield() {
 
 // lab3_challenge1
 ssize_t sys_user_wait(int pid) {
-  sprint("User call wait, waiting pid = %d\n", pid);
+  //sprint("User call wait, waiting pid = %d\n", pid);
   return do_wait(pid);
 }
 //
