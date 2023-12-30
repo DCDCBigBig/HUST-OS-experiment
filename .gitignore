@@ -6,7 +6,7 @@ cscope*
 *dump
 rename.py
 format.py
-obj/
+
 .VSCodeCounter/
 .vscode/
 pke_out.txt
