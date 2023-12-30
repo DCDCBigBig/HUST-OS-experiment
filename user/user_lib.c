@@ -78,5 +78,5 @@ void yield() {
 }
 
 int wait(int pid) {
-  do_user_call(SYS_user_wait, pid, 0, 0, 0, 0 ,0, 0);
+  return do_user_call(SYS_user_wait, pid, 0, 0, 0, 0 ,0, 0);
 }
