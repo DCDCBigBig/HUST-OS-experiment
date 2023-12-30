@@ -89,5 +89,6 @@ void handle_waiting_state(int pid) {
   for (int i = 0; i < NPROC; i ++) {
     if (waited[i] == pa_pid) waited[i] = -1;
   }
+  procs[pid].parent->trapframe->regs.a0 = pid;
   insert_to_ready_queue(procs[pid].parent);
 }
