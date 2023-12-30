@@ -75,10 +75,10 @@ void switch_to(process* proc) {
 //
 void init_proc_pool() {
   memset( procs, 0, sizeof(process)*NPROC );
-
   for (int i = 0; i < NPROC; ++i) {
     procs[i].status = FREE;
     procs[i].pid = i;
+    clear_waiting_state(i);
   }
 }
 
@@ -236,7 +236,7 @@ int do_fork( process* parent)
         //panic( "You need to implement the code segment mapping of child in lab3_1.\n" );
         {
         uint64 parent_pa = lookup_pa(parent->pagetable, parent->mapped_info[i].va);
-        user_vm_map(child->pagetable, parent->mapped_info[i].va, PGSIZE * parent->mapped_info[i].npages, parent_pa, prot_to_type(PROT_READ | PROT_EXEC, 1));
+        user_vm_map((pagetable_t)child->pagetable, parent->mapped_info[i].va, PGSIZE * parent->mapped_info[i].npages, parent_pa, prot_to_type(PROT_READ | PROT_EXEC, 1));
 
         // after mapping, register the vm region (do not delete codes below!)
         child->mapped_info[child->total_mapped_region].va = parent->mapped_info[i].va;
@@ -246,13 +246,48 @@ int do_fork( process* parent)
         child->total_mapped_region++;
         break;
         }
+      case DATA_SEGMENT:
+      {
+        uint64 va = parent->mapped_info[i].va;
+        for (int i = 0; i < parent->mapped_info[i].npages; i ++, va += PGSIZE) {
+          void *new_page = alloc_page();
+          memcpy(new_page, (void *)lookup_pa(parent->pagetable, va), PGSIZE);
+          user_vm_map((pagetable_t)child->pagetable, va, PGSIZE, (uint64)new_page, prot_to_type(PROT_READ | PROT_WRITE, 1));
+        }
+        child->mapped_info[child->total_mapped_region].va = parent->mapped_info[i].va;
+        child->mapped_info[child->total_mapped_region].npages = parent->mapped_info[i].npages;
+        child->mapped_info[child->total_mapped_region].seg_type = DATA_SEGMENT;
+        child->total_mapped_region ++;
+        break;
+      }
     }
   }
 
   child->status = READY;
   child->trapframe->regs.a0 = 0;
   child->parent = parent;
-  insert_to_ready_queue( child );
+  insert_to_ready_queue( child );                                        
 
   return child->pid;
+}
+
+int do_wait(int pid){
+  //sprint("do_wait, waiting pid = %d\n", pid);
+  if (pid < -1 || pid == 0) return -1;
+  if (pid == -1) {
+    for (int i = 0; i < NPROC; i ++) {
+      if (procs[i].status != ZOMBIE && procs[i].status != FREE) {
+        if (procs[i].parent == current) add_waiting_state(current->pid, i);
+      }
+    }
+    current->status = BLOCKED;
+    schedule();
+  }
+  else {
+    if (procs[pid].parent != current) return -1;
+    add_waiting_state(current->pid, pid);
+    current->status = BLOCKED;
+    schedule();
+  }
+  return 0;
 }

@@ -7,6 +7,8 @@
 
 process* ready_queue_head = NULL;
 
+int waited[NPROC];
+
 //
 // insert a process, proc, into the END of ready queue.
 //
@@ -70,4 +72,22 @@ void schedule() {
   current->status = RUNNING;
   sprint( "going to schedule process %d to run.\n", current->pid );
   switch_to( current );
+}
+
+void clear_waiting_state(int pid) {
+  waited[pid] = -1;
+}
+
+void add_waiting_state(int pa_pid, int pid) {
+  waited[pid] = pa_pid;
+}
+
+// only called when a process ends
+void handle_waiting_state(int pid) {
+  if (waited[pid] == -1) return;
+  int pa_pid = waited[pid];
+  for (int i = 0; i < NPROC; i ++) {
+    if (waited[i] == pa_pid) waited[i] = -1;
+  }
+  insert_to_ready_queue(procs[pid].parent);
 }

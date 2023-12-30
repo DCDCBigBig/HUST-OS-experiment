@@ -8,5 +8,8 @@
 
 void insert_to_ready_queue( process* proc );
 void schedule();
+void clear_waiting_state(int pid);
+void add_waiting_state(int pa_pid, int pid);
+void handle_waiting_state(int pid);
 
 #endif
